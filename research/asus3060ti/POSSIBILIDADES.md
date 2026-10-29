@@ -68,7 +68,7 @@ Primeiro testar amostras reais de pesos/KV/intermediários autorizados, formatos
 
 ## Próximos testes
 
-1. Identificar backend/modelo que o usuário pretende usar, sem baixar modelos grandes por suposição.
+1. Escolher com o usuário o modelo de uso real. O inventário local encontrou Ollama e modelos já instalados; nenhum download é necessário para começar. Não publicar o inventário completo de modelos pessoais.
 2. Baseline end-to-end fixando prompt, contexto, seed, versão, quantização, batch e concorrência; separar carga fria, prefill, decode, VRAM/RAM pico e qualidade.
 3. Comparar residência/quantização/KV/Flash Attention disponíveis, uma variável por vez.
 4. Prototipar pinned/overlap e compressão apenas se houver tráfego repetido relevante no perfil.
@@ -81,3 +81,11 @@ Primeiro testar amostras reais de pesos/KV/intermediários autorizados, formatos
 - [llama.cpp: implementação de KV cache e quantização](https://github.com/ggml-org/llama.cpp/blob/master/src/llama-kv-cache.cpp). Flags e compatibilidade precisam ser conferidas na versão instalada.
 - [Intel i3-10100: 4 cores, 8 threads, DDR4-2666](https://www.intel.com/content/www/us/en/products/sku/199283/intel-core-i310100-processor-6m-cache-up-to-4-30-ghz/specifications.html).
 - [Intel: processadores K/X desbloqueados para overclock](https://www.intel.com/content/www/us/en/support/articles/000038213.html).
+
+## i3 e RAM: triagem adicional
+
+O inventário confirmou i3-10100, 4 núcleos habilitados e 8 processadores lógicos; 4 módulos de 8 GiB, todos configurados em 2666 MT/s. O campo WMI de clock não é uma medição de turbo sustentado sob carga.
+
+`cpu_ram.py` executou cópia de 256 MiB e GEMM FP32 1536² em processos separados, solicitando 4 e 8 threads ao BLAS. Resultados: **18,08 GB/s** na cópia RAM (leitura + escrita), **228,01 GFLOPS** com 4 threads solicitadas e **272,76 GFLOPS** com 8, aproximadamente **+19,6%** neste cálculo. As matrizes completas e buffers foram conferidos.
+
+[evidence/cpu-ram.json](evidence/cpu-ram.json) guarda as amostras. É uma triagem curta, uma execução com desktop não controlado, sem telemetria térmica/frequência e sem confirmação independente da contagem de threads do backend. Não mede tokens/s, pico físico da RAM ou estabilidade de overclock. Não concluir daqui que 8 threads sempre vencem em inferência: decode CPU pode ser limitado pela RAM. O próximo teste útil compara 4/8 threads no mesmo modelo, com CPU/offload definidos e repetição.

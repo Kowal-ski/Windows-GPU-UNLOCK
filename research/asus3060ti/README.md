@@ -45,3 +45,5 @@ python research/asus3060ti/bandwidth.py --cuda-dir CAMINHO/CUDA12 --output resul
 ```
 
 **English summary:** experimental opt-in for one exact ASUS GA104 board and PROM. One physical Windows boot and bounded numerical tests succeeded. No general hardware support, game/LLM speedup, extra VRAM or DLSS FG claim. Source only; proprietary assets and machine-specific captures are excluded. The Portuguese wizard preserves captures, checks identities/hashes, runs existing profile gates and separates read-only probing from staging a write-capable EFI.
+
+`cpu_ram.py --output resultado-cpu.json` faz uma triagem curta de RAM e GEMM no i3, com processos solicitando quatro/oito threads. Veja resultados e limites no catálogo de possibilidades; isso ainda não é medição de tokens/s.

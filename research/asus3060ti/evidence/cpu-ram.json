@@ -1,0 +1,54 @@
+{
+  "protocol": "cpu-ram-observational-v1",
+  "RAM_copy_256MiB_read_plus_write_GB_s": 18.083220058608035,
+  "RAM_copy_samples_seconds": [
+    0.028805699999793433,
+    0.028938399998878594,
+    0.028418199999578064,
+    0.02923919999739155,
+    0.029093699999066303,
+    0.030324400002427865,
+    0.029922899997472996,
+    0.03164720000131638,
+    0.030077799998252885,
+    0.02945490000274731,
+    0.034422900000208756,
+    0.030440200000157347
+  ],
+  "CPU_GEMM": [
+    {
+      "requested_threads": 4,
+      "median_GFLOPS": 228.0115429162808,
+      "samples_seconds": [
+        0.03220349999901373,
+        0.03345699999772478,
+        0.028848400001152186,
+        0.03178679999837186,
+        0.03278060000229743,
+        0.028823900000134017,
+        0.027411299997766037,
+        0.026005399999121437,
+        0.034041200000501703
+      ],
+      "full_matrix_checked": true
+    },
+    {
+      "requested_threads": 8,
+      "median_GFLOPS": 272.761247364835,
+      "samples_seconds": [
+        0.026750999997602776,
+        0.023888399999123067,
+        0.025130099998932565,
+        0.026649100000213366,
+        0.025127900000370573,
+        0.026571799997327616,
+        0.028688200000033248,
+        0.017781400001695147,
+        0.026797000002261484
+      ],
+      "full_matrix_checked": true
+    }
+  ],
+  "settings_changed": false,
+  "limits": "One run with uncontrolled desktop load; requested BLAS threads are not independently verified. FP32 GEMM and RAM copy are not LLM tokens/s or a hardware memory-controller measurement. No CPU frequency/thermal telemetry."
+}
