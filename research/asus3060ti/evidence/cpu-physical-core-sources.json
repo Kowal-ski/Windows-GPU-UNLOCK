@@ -1,0 +1,37 @@
+{
+  "date": "2026-10-29",
+  "analysis_only": true,
+  "hardware_settings_changed": false,
+  "sources": [
+    {
+      "document": "615211",
+      "url": "https://cdrdv2.intel.com/v1/dl/getContent/615211",
+      "sha256": "0468134adb02156c2addbc3494f111b3cbf166a09469f63b0dc31a5c34120de9",
+      "bytes": 1996932
+    },
+    {
+      "document": "615212",
+      "url": "https://cdrdv2.intel.com/v1/dl/getContent/615212",
+      "sha256": "0b4936ca7eeed4fbcdfd741cdf4c0a138b70d07041cba73c8c1aab8af633c345",
+      "bytes": 2967878
+    },
+    {
+      "document": "615213",
+      "url": "https://cdrdv2.intel.com/v1/dl/getContent/615213",
+      "sha256": "27593f34008f6627fc14eaa5b0310e5fb7dfd20fc82f60c6ff9faa5a81c520ce",
+      "bytes": 874851
+    },
+    {
+      "document": "FspmUpd.h",
+      "url": "https://github.com/IntelFsp/FSP/blob/d901c9458288e1a0eb0ec9901efcd2ddfaa01cb8/CometLakeFspBinPkg/CometLakeS/Include/FspmUpd.h",
+      "sha256": "927435b92e6fdd296b00c43d529090f99e8aad8dec7cf6a7372c022acac1b9a2",
+      "bytes": 105204
+    },
+    {
+      "document": "FspsUpd.h",
+      "url": "https://github.com/IntelFsp/FSP/blob/d901c9458288e1a0eb0ec9901efcd2ddfaa01cb8/CometLakeFspBinPkg/CometLakeS/Include/FspsUpd.h",
+      "sha256": "07a9475f70aaef7024206574ae2ad8ffc8dc922426862c5148cdb74414febbc4",
+      "bytes": 125521
+    }
+  ]
+}

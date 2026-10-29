@@ -89,3 +89,7 @@ O inventÃ¡rio confirmou i3-10100, 4 nÃºcleos habilitados e 8 processadores lÃ³gi
 `cpu_ram.py` executou cÃ³pia de 256 MiB e GEMM FP32 1536Â² em processos separados, solicitando 4 e 8 threads ao BLAS. Resultados: **18,08 GB/s** na cÃ³pia RAM (leitura + escrita), **228,01 GFLOPS** com 4 threads solicitadas e **272,76 GFLOPS** com 8, aproximadamente **+19,6%** neste cÃ¡lculo. As matrizes completas e buffers foram conferidos.
 
 [evidence/cpu-ram.json](evidence/cpu-ram.json) guarda as amostras. Ã‰ uma triagem curta, uma execuÃ§Ã£o com desktop nÃ£o controlado, sem telemetria tÃ©rmica/frequÃªncia e sem confirmaÃ§Ã£o independente da contagem de threads do backend. NÃ£o mede tokens/s, pico fÃ­sico da RAM ou estabilidade de overclock. NÃ£o concluir daqui que 8 threads sempre vencem em inferÃªncia: decode CPU pode ser limitado pela RAM. O prÃ³ximo teste Ãºtil compara 4/8 threads no mesmo modelo, com CPU/offload definidos e repetiÃ§Ã£o.
+
+## Correção de objetivo: núcleos físicos
+
+O usuário esclareceu que o objetivo do i3 é reativar núcleos físicos desativados na fabricação. O teste 4/8 threads não responde a esse objetivo. Veja [a investigação específica, fontes e lacunas](I3-NUCLEOS-FISICOS.md). A hipótese passa a ter investigação própria; não será substituída por ajuste de Hyper-Threading.
