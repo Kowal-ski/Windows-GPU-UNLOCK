@@ -24,7 +24,7 @@ foreach($a in (Get-Content -LiteralPath (Join-Path $repo 'internal-boot/unlock/a
 }
 $inputManifest=@(Get-LocalTreeInputs $repo)
 $tree=Get-LocalInputDigest $inputManifest
-Import-GuHostCompiler $VcVars
+Import-GuHostCompiler $VcVars $Clang
 
 # A reviewed profile for another card must reject this machine's real config and console graph.
 $reviewed=@(@('-DGU_PROFILE_B650M_3090FE','220410de','145410de'),@('-DGU_PROFILE_B660M_3070TI','248210de','50521462'),@('-DGU_PROFILE_X870_3090TI','220310de','88701043'))
@@ -43,13 +43,16 @@ function Run-Job([string]$name,[string[]]$compile,[string[]]$run,[int]$expect=0)
  if($code -ne $expect){throw "Unexpected result: $name"}
 }
 
-foreach($test in @('test_probe_records.py','test_local_topology.py','test_gpu_path.py')) {
+$env:GU_TEST_CLANG=$Clang
+foreach($test in @('test_probe_records.py','test_boot_config_comparison.py','test_experimental_asus3060ti.py','test_asus_family_guard.py','test_aggregate_topology.py','test_local_topology.py','test_gpu_path.py')) {
  & $Python -I (Join-Path $PSScriptRoot $test)
  if($LASTEXITCODE -ne 0){throw "Capture-free generator regression failed: $test"}
 }
 & $Python -I (Join-Path $PSScriptRoot 'test_gpu_path_contract.py') --clang $Clang --output (Join-Path $PSScriptRoot ('build/path-contract-'+[Guid]::NewGuid().ToString('N')))
 if($LASTEXITCODE -ne 0){throw 'Native/Python GPU path contract comparison failed'}
-& $Python -I (Join-Path $PSScriptRoot 'test_make_profile.py') (Join-Path $local 'capture') (Build-GuFwsecLocate $repo $Clang)
+$admissionArgs=@()
+if($report.ExperimentalAsus3060Ti){$admissionArgs+= '--experimental-asus3060ti'}
+& $Python -I (Join-Path $PSScriptRoot 'test_make_profile.py') (Join-Path $local 'capture') (Build-GuFwsecLocate $repo $Clang) @admissionArgs
 if($LASTEXITCODE -ne 0){throw 'Generator refusal tests failed'};$results['generator refusals']=[ordered]@{Exit=0;Expected=0}
 
 $unlock=Join-Path $repo 'internal-boot/unlock'

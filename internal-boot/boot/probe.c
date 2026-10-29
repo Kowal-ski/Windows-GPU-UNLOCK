@@ -9,6 +9,11 @@
 #include <Protocol/SimpleFileSystem.h>
 #include <IndustryStandard/Acpi.h>
 #include "../unlock/sha256.h"
+
+/* Local evidence collection only. This flag never admits a write-side profile. */
+#if defined(GU_PROBE_ASUS_3060TI) && (!defined(GU_DIAGNOSTIC_ONLY) || !defined(GU_DIAGNOSTIC_PROBE) || !defined(GU_PROBE_GENERIC) || !defined(GU_USB_PROBE) || !defined(GU_USB_MEDIA) || defined(GU_FULL_UNLOCK) || defined(GU_EXPERIMENTAL_3090) || defined(GU_CONSOLE_PREPARE) || defined(GU_AUTOMATIC_BOOT) || defined(GU_HEADLESS_RESEARCH) || defined(GU_UEFI_PORT) || defined(GU_INTERNAL_BOOT) || defined(GU_PROFILE_LOCAL) || defined(GU_HOST_WRITE_TEST))
+#error GU_PROBE_ASUS_3060TI requires the standalone read-only USB diagnostic; no release or unlock
+#endif
 #include "probe.h"
 #include "../unlock/machine-profile.h"
 
@@ -49,6 +54,9 @@ VOID Problem(CAPTURE *c,const char *where,EFI_STATUS s);
 #endif
 static BOOLEAN ProbeTarget(EFI_PCI_IO_PROTOCOL *io,UINT32 id) {
   UINT32 cls=0;
+#ifdef GU_PROBE_ASUS_3060TI
+  if(id!=0x248910deU)return FALSE;
+#endif
   return (id&0xffffU)==0x10deU && io->Pci.Read(io,EfiPciIoWidthUint32,8,1,&cls)==EFI_SUCCESS && (cls>>24)==3;
 }
 #else
@@ -163,8 +171,12 @@ static VOID DumpProm(CAPTURE *c,EFI_FILE_PROTOCOL *root,UINT8 *page) {
  * All allocation/protocol calls finish before the final identity/config recheck. */
 static BOOLEAN ProbeEnvelope(CAPTURE *c,EFI_PCI_IO_PROTOCOL *io,const UINT32 *cfg) {
 #ifdef GU_PROBE_GENERIC
+#ifdef GU_PROBE_ASUS_3060TI
+  BOOLEAN identity=cfg[0]==0x248910deU && cfg[11]==0x884f1043U;
+#else
   BOOLEAN identity=cfg[0]==0x220410deU || cfg[0]==0x220310deU ||
     cfg[0]==0x248710deU || cfg[0]==0x250410deU;
+#endif
 #else
   BOOLEAN identity=cfg[0]==GU_BOARD_ID && cfg[11]==GU_BOARD_SUBSYSTEM;
 #ifdef GU_BAR0_BASE

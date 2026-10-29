@@ -123,11 +123,16 @@ def damage_prom(path):
 
 
 def main():
-    global CAPTURES, LOCATOR
+    global CAPTURES, LOCATOR, ENVELOPE
     CAPTURES, LOCATOR = Path(sys.argv[1]), Path(sys.argv[2])
+    experimental = '--experimental-asus3060ti' in sys.argv[3:]
+    if experimental:
+        original = ENVELOPE
+        ENVELOPE = mp.experimental_asus3060ti_envelope(original)
+        case('default mode still refuses experimental identity', 'device ID is outside', envelope=original)
     case('real captures accepted', None)
     case('single capture', 'at least', lambda w, d: [p.unlink() for p in d[:-1]])
-    case('captures disagree', 'disagree on GU_PROM_SHA256',
+    case('captures disagree', 'experimental ASUS' if experimental else 'disagree on GU_PROM_SHA256',
          lambda w, d: sub(d[0], r'^(prom sha256=)[0-9a-f]{64}', lambda m: m[1] + '0' * 64))
     case('unproven chip', 'no hardware-proven profile',
          lambda w, d: sub(d[-1], r'^(mmio off=0x00000000 status=0x0+ value=0x)[0-9a-f]{8}', hexword(0xdead00a1)))
@@ -163,8 +168,8 @@ def main():
         case('integrated GPU in only one capture', 'disagree on the integrated GPU', lambda w, d: remove_igpu(d[-1]))
     elif info:
         add_igpu = lambda p: sub(p, r'^(pci config-dwords=(?!....10de)[0-9a-f]{8} [0-9a-f]{8} )(?!03)[0-9a-f]{2}', lambda m: m[1] + '03')
-        case('an integrated GPU appears in every capture', None, lambda w, d: [add_igpu(p) for p in d])
-        case('integrated GPU in only one capture', 'disagree on the integrated GPU', lambda w, d: add_igpu(d[-1]))
+        case('an integrated GPU appears in every capture', 'experimental ASUS' if experimental else None, lambda w, d: [add_igpu(p) for p in d])
+        case('integrated GPU in only one capture', 'experimental ASUS' if experimental else 'disagree on the integrated GPU', lambda w, d: add_igpu(d[-1]))
         case('two integrated GPUs', 'at most one non-NVIDIA display controller', lambda w, d: [(add_igpu(p), duplicate_igpu(p)) for p in d])
     # The EDID driver is optional, but a driver other than the reviewed AMI one may never own the
     # EdidDiscovered interface of the RTX GOP, whether or not this machine has one.

@@ -1,0 +1,50 @@
+{
+  "scope": "One exact ASUS RTX 3060 Ti; experimental; no general compatibility claim",
+  "hardware": {
+    "gpu": "ASUS RTX 3060 Ti",
+    "pci": "10de:2489",
+    "subsystem": "1043:884f",
+    "chip": "b74000a1",
+    "VRAM_MiB": 8192,
+    "board": "ASUS PRIME B460-PLUS",
+    "BIOS": "1806",
+    "driver": "621.01"
+  },
+  "host_jobs_passed_before_wizard": 21,
+  "physical_unlock_boots_validated": 1,
+  "transaction": {
+    "result": 0,
+    "containment": 0,
+    "quiesced": 1,
+    "fault": 0,
+    "retained": 0,
+    "maps": 0,
+    "FLR": 1
+  },
+  "efi_sha256": {
+    "wrapper": "960d1a1606ac334caff0cb51b16ff0660b0a41adb6cda19ce96ad81674e2938c",
+    "child": "84d73fa81471e2a104ad7781f17e4bc032e86f2d0797c7966dc6603dde111c92"
+  },
+  "stability": {
+    "passed": true,
+    "seconds_under_test": 121.03153620000012,
+    "modes": [
+      "fp32_pedantic",
+      "fp16_tensor_fp32_accumulate",
+      "bf16_tensor_fp32_accumulate",
+      "tf32_tensor_fp32_accumulate"
+    ],
+    "gemms": 17792,
+    "full_matrix_checks": 278,
+    "max_sampled_temperature_c": 70.84,
+    "max_sampled_gpu_utilization_percent": 100.0,
+    "max_sampled_power_w": 188.45,
+    "limits": "Two-minute GEMM test only; not certification for every workload or long-term operation."
+  },
+  "limits": [
+    "No game or end-to-end LLM performance measured",
+    "No extra VRAM, physical bus width or DLSS FG demonstrated",
+    "No long-term stability certification",
+    "Wizard end-to-end hardware flow not repeated"
+  ]
+}

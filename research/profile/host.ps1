@@ -1,6 +1,12 @@
 # GPL-2.0-only. Host compiler setup shared by research/profile scripts. No GPU or firmware access.
 
-function Import-GuHostCompiler([string]$VcVars) {
+function Import-GuHostCompiler([string]$VcVars,[string]$Clang) {
+ # Portable LLVM-MinGW includes its own Windows headers/import libraries.
+ # Verify its target rather than pretending that an MSVC environment exists.
+ if(!$VcVars -and $Clang) {
+  $target=& $Clang -dumpmachine 2>$null
+  if($LASTEXITCODE -eq 0 -and "$target".Trim() -eq 'x86_64-w64-windows-gnu'){return}
+ }
  if(!$VcVars) {
   $where=Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
   if(Test-Path -LiteralPath $where){$VcVars=& $where -latest -products * -find 'VC\Auxiliary\Build\vcvars64.bat' | Select-Object -First 1}

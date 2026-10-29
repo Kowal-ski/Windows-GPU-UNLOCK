@@ -82,6 +82,8 @@ function Get-LocalRequiredFiles {
    'internal-boot/unlock/build.ps1','internal-boot/boot/handoff.c',
    'research/headless/build-usb.ps1','research/headless/stage-usb.ps1',
    'research/profile/make-profile.py','research/profile/capture_graph.py','research/profile/test-profile.ps1',
+   'research/profile/test_boot_config_comparison.py',
+   'research/profile/test_experimental_asus3060ti.py','research/profile/test_asus_family_guard.py',
    'internal-boot/boot/make-console-fixture.py','internal-boot/boot/test_aggregate_full.c',
    'internal-boot/boot/test_aggregate_prepare.c','internal-boot/boot/test_research_input.c',
    'research/profile/host.ps1','research/profile/proven.json')

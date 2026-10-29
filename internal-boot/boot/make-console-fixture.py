@@ -107,10 +107,12 @@ for role, protocol, controller in [
     roles[role] = records[0][1]
     block = blocks[next(h for h, i in indices.items() if i == roles[role])]
     if aggregate:
-        observed = re.findall(r'^driver image=0x([0-9a-f]+) binding=0x([0-9a-f]+)$', block, re.M)
+        observed = re.findall(r'^driver image=0x([0-9a-f]+) binding=0x([0-9a-f]+)(?: version=0x([0-9a-f]+) stop-address=0x([0-9a-f]+))?$', block, re.M)
         binding = profile.binding_for(observed_bindings, original[roles[role]])
-        if len(observed) != 1 or tuple(int(value, 16) for value in observed[0]) != (binding['image'], binding['handle']):
+        if len(observed) != 1 or tuple(int(value, 16) for value in observed[0][:2]) != (binding['image'], binding['handle']):
             raise ValueError('Aggregate graph and binding image records disagree')
+        if observed[0][2] and tuple(int(value, 16) for value in observed[0][2:]) != (binding['version'], binding['stop']):
+            raise ValueError('Aggregate graph and binding version/stop records disagree')
     roles[role.removesuffix('Agent') + 'Image'] = indices[hex(int(re.search(r'driver image=(0x[0-9a-f]+)', block)[1], 16))]
 console = re.search(r'console out=(0x[0-9a-f]+) error=(0x[0-9a-f]+) input=(0x[0-9a-f]+)', text)
 for role, value in zip(['Console', 'Error', 'Input'], console.groups()):
@@ -166,7 +168,13 @@ if aggregate:
         parent,device,base,size,code_type=(int(value,16) for value in image_rows[0])
         if (base,size,code_type)!=(binding['base'],binding['size'],binding['code-type']):
             raise ValueError('Aggregate image and binding metadata disagree')
-        image_nodes=re.findall(r'^image-file-path-node raw=([0-9a-f]+)$',image_block['raw'],re.M)
+        # diagnostic.c prefixes only the first node with "image-file-";
+        # subsequent nodes (including END_ENTIRE) retain "path-node".
+        # Read just this contiguous path, never a separate protocol's path.
+        image_paths=re.findall(r'^image-file-path-node raw=[0-9a-f]+(?:\n(?:image-file-)?path-node raw=[0-9a-f]+)*',image_block['raw'],re.M)
+        if len(image_paths)!=1:
+            raise ValueError('Aggregate image requires one unambiguous file path')
+        image_nodes=[line.split('raw=',1)[1] for line in image_paths[0].splitlines()]
         if image_nodes!=[node.hex() for node in binding['nodes']]:
             raise ValueError('Aggregate image file paths disagree')
         if device and hex(device) not in indices:

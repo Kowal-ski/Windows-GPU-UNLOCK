@@ -1,5 +1,6 @@
 """Aggregate discovery and metadata are synthetic evidence, never hardware approval."""
 import importlib.util
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -19,6 +20,33 @@ def inspect(text, mutate=None):
 
 
 class AggregateTopologyTests(unittest.TestCase):
+    def test_probe_image_path_continuations_are_not_lost(self):
+        text=data.synthetic_capture(aggregate=True,no_edid=False,children=1)
+        text=text.replace('image-file-path-node raw=7fff0400','path-node raw=7fff0400')
+        for content,expected in ((text,0),(text.replace('path-node raw=7fff0400','path-node raw=7f010400'),1)):
+            with self.subTest(expected=expected),tempfile.TemporaryDirectory() as folder:
+                source=Path(folder)/'DIAG00.TXT';target=Path(folder)/'fixture.h';source.write_text(content)
+                done=subprocess.run([sys.executable,'-I',str(HERE.parents[1]/'internal-boot/boot/make-console-fixture.py'),
+                    str(source),'--single-rtx','--aggregate','--no-igpu','--no-edid-child','--output='+str(target)],capture_output=True,text=True)
+                self.assertEqual(done.returncode,expected,done.stderr)
+                self.assertEqual(target.exists(),expected==0)
+
+    def test_current_probe_binding_details_are_verified(self):
+        text=data.synthetic_capture(aggregate=True,no_edid=False,children=1)
+        bindings={b['handle']:b for b in mp.parse_bindings(text.splitlines())}
+        def enrich(match):
+            binding=bindings[int(match[2],16)]
+            return match[0]+f" version=0x{binding['version']:x} stop-address=0x{binding['stop']:x}"
+        text=re.sub(r'driver image=0x([0-9a-f]+) binding=0x([0-9a-f]+)',enrich,text)
+        variants=[(text,0),(text.replace('version=0x10 stop-address=', 'version=0x11 stop-address=',1),1)]
+        for content,expected in variants:
+            with self.subTest(expected=expected),tempfile.TemporaryDirectory() as folder:
+                source=Path(folder)/'DIAG00.TXT';target=Path(folder)/'fixture.h';source.write_text(content)
+                done=subprocess.run([sys.executable,'-I',str(HERE.parents[1]/'internal-boot/boot/make-console-fixture.py'),
+                    str(source),'--single-rtx','--aggregate','--no-igpu','--no-edid-child','--output='+str(target)],capture_output=True,text=True)
+                self.assertEqual(done.returncode,expected,done.stderr)
+                self.assertEqual(target.exists(),expected==0)
+
     def test_aggregate_fixture_maps_combo_and_installed_protocols(self):
         for children in (1,2):
             with tempfile.TemporaryDirectory() as folder:

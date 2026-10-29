@@ -26,7 +26,15 @@ static void Damage(unsigned fault) {
     case 4:PhysicalMode.FrameBufferBase=0;break;
     case 5:DisplayPaths[0][17]^=1;break;
     case 6:Input.WaitForKey=NULL;break;
-    case 7:Live.Edges[0].Count++;break;
+    case 7:
+      /* Real captures enumerate unrelated handles before the GPU. Damage the
+       * target PCI owner, not whichever unrelated edge happens to be first. */
+      for(UINTN i=0;i<Live.Count;i++)if(Live.Edges[i].Handle==H(PCI) &&
+        GuGuidEqual(&Live.Edges[i].Protocol,&PciGuid) &&
+        Live.Edges[i].Attributes==EFI_OPEN_PROTOCOL_BY_DRIVER) {
+        Live.Edges[i].Count++;return;
+      }
+      Check(FALSE,"target PCI owner exists for duplicate-open fault");break;
     case 8:Table.StandardErrorHandle=H(PCI);break;
     case 9:Edge(PRIMARY,OBSERVER,PRIMARY,&GopGuid,EFI_OPEN_PROTOCOL_BY_DRIVER);break;
     case 15:ParentDrift=TRUE;break;

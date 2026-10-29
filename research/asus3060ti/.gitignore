@@ -1,0 +1,4 @@
+benchmark-results/
+random-validation-results/
+.local/
+*.log

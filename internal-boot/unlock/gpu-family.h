@@ -12,6 +12,13 @@
 #define GU_GPU_FAMILY_GA104 104U
 #define GU_GPU_FAMILY_GA106 106U
 
+/* Local experiment only, never an implicit extension of reviewed support. */
+#if defined(GU_EXPERIMENTAL_ASUS3060TI)
+#if !defined(GU_PROFILE_LOCAL) || GU_EXPERIMENTAL_ASUS3060TI != 1 || GU_BOARD_ID != 0x248910deU || GU_BOARD_SUBSYSTEM != 0x884f1043U || GU_DEVICE_MEMORY_SIZE != 0x2000U || GU_CHIP_ID != 0xb74000a1U
+#error ASUS 3060 Ti experiment requires the exact generated local identity
+#endif
+#endif
+
 /* Existing generated headers retain their captured literal GU_CHIP_ID. Derive
  * metadata from that exact revision, without changing generator admission. */
 #if defined(GU_PROFILE_LOCAL) && !defined(GU_GPU_FAMILY)
@@ -41,7 +48,7 @@
 #define GU_GPU_FAMILY_NAME "GA104"
 #define GU_FAMILY_CHIP_ID 0xb74000a1U
 /* These two reviewed SKUs do not form a free identity/memory cross product. */
-#if !((GU_BOARD_ID == 0x248210deU && GU_DEVICE_MEMORY_SIZE == 0x2000U) || (GU_BOARD_ID == 0x248710deU && GU_DEVICE_MEMORY_SIZE == 0x3000U))
+#if !((GU_BOARD_ID == 0x248210deU && GU_DEVICE_MEMORY_SIZE == 0x2000U) || (GU_BOARD_ID == 0x248710deU && GU_DEVICE_MEMORY_SIZE == 0x3000U) || (defined(GU_EXPERIMENTAL_ASUS3060TI) && GU_BOARD_ID == 0x248910deU && GU_DEVICE_MEMORY_SIZE == 0x2000U))
 #error Card identity or memory is outside the reviewed GA104 family combinations
 #endif
 #elif GU_GPU_FAMILY == GU_GPU_FAMILY_GA106

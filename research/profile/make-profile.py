@@ -23,13 +23,14 @@ pathless aggregate child; OutAgent/GfxAgent own that aggregate instead. One or
 two NVIDIA display children and an EDID driver are required. Topology-specific
 capture replay remains mandatory before any write build.
 
-Anything outside research/profile/proven.json, or any disagreement between
-captures, is refused: there is no override. Widening the envelope is a
-reviewed change backed by hardware evidence (docs/NEW-MACHINE.en.md).
+Normal admission is restricted to research/profile/proven.json. The explicit
+experimental ASUS 3060 Ti option is pinned to a local captured identity/PROM;
+it does not add hardware-proven support or bypass host-test evidence gates.
 
 Usage: python -I make-profile.py CAPTURE_DIR FWSEC_LOCATE_EXE
 """
 import argparse
+import copy
 import hashlib
 import importlib.util
 import json
@@ -399,6 +400,17 @@ def probe_mmio(text):
     return values, statuses
 
 
+def experimental_asus3060ti_envelope(envelope):
+    """Private experimental path; do not edit or relabel the proven catalog."""
+    result = copy.deepcopy(envelope)
+    result['_experimental_asus3060ti'] = True
+    result['probe_device_ids'].append('248910de')
+    chip = next(c for c in result['chips'] if c['family'] == 'GA104')
+    chip['memory'].append('2000')
+    chip['pci_memory']['248910de'] = ['2000']
+    return result
+
+
 def analyze(diag, image_dir, envelope):
     """Everything one capture yields. image_dir=None skips the driver code hashes."""
     raw = diag.read_bytes()
@@ -425,6 +437,9 @@ def analyze(diag, image_dir, envelope):
         fail(f'{diag.name}: expected one 64-dword probe config snapshot')
     cfg = [int(w, 16) for w in words]
     board, subsystem = cfg[0], cfg[11]
+    experimental_asus = envelope.get('_experimental_asus3060ti', False)
+    if experimental_asus and (board != 0x248910de or subsystem != 0x884f1043):
+        fail('experimental ASUS profile requires exactly 10de:2489 / 1043:884f')
     if f'{board:08x}' not in envelope.get('probe_device_ids', []):
         fail('device ID is outside the reviewed deep-probe envelope')
     if cfg[2] != int(envelope['class_revision'], 16):
@@ -473,6 +488,8 @@ def analyze(diag, image_dir, envelope):
     prom = re.search(r'^prom sha256=([0-9a-f]{64})$', text, re.M)
     if not prom:
         fail(f'{diag.name}: no PROM hash')
+    if experimental_asus and prom[1] != '2c6108c3c5fe6f6ff4d205f9ca2279c3b2f8fc35828fd5e8a5c31719d025df51':
+        fail('experimental ASUS profile requires its captured PROM hash')
 
     lines = text.split('\n')
     bindings = parse_bindings(lines)
@@ -621,6 +638,10 @@ def analyze(diag, image_dir, envelope):
         defines += [('GU_COMBO_SIZE', f'0x{combo["size"]:x}U'),
                     ('GU_COMBO_STOP', f'0x{off(combo):x}U'),
                     ('GU_COMBO_VERSION', f'0x{combo["version"]:x}U')]
+    if experimental_asus:
+        if igpu is not None or topology is None or no_edid_driver or len(children) != 1:
+            fail('experimental ASUS profile requires the captured single-RTX aggregate console')
+        defines.append(('GU_EXPERIMENTAL_ASUS3060TI', '1'))
     result = {
         'capture': diag.name, 'capture_sha256': hashlib.sha256(raw).hexdigest(),
         'config': words, 'prom_sha256': prom[1], 'igpu_id': None if igpu is None else f'{igpu:08x}', 'rtx_fb': f'0x{fb[1]}',
@@ -661,6 +682,31 @@ def locate_fwsec(locator, prom_path, prom_bytes):
     return fw
 
 
+def boot_configs_equal(first, second):
+    """Compare separate boots, never save/restore or within-transaction state.
+
+    ASUS 1043:884f RTX 3060 Ti captures on PRIME B460-PLUS have exactly one
+    observed link-status difference: CurrentDeemphasisLevel at PCIe +0x32.
+    Pin the identity, revision, capability layout and both observed values.
+    Every other bit remains exact. This does not admit the unsupported PCI ID
+    through analyze() or relax full-release.c's live verification.
+    """
+    if first == second:
+        return True
+    if len(first) != 64 or len(second) != 64:
+        return False
+    pins = {0: '248910de', 8: '030000a1', 0x2c: '884f1043',
+            0x34: '00000060', 0x60: '48036801', 0x68: '00807805',
+            0x78: '0012b410'}
+    if any(first[offset // 4] != value or second[offset // 4] != value
+           for offset, value in pins.items()):
+        return False
+    status = 0xa8 // 4
+    if {first[status], second[status]} != {'001e0004', '001f0004'}:
+        return False
+    return all(a == b for i, (a, b) in enumerate(zip(first, second)) if i != status)
+
+
 def generate(capture_dir, locator, envelope):
     """Validate captures; return (header text, profile.json dict, fixture files {relative path: bytes})."""
     capture_dir = Path(capture_dir)
@@ -680,7 +726,7 @@ def generate(capture_dir, locator, envelope):
             fail(f'{earlier.name} and {diags[-1].name} disagree on the integrated GPU; the display adapters must not vary between boots')
         if other['child_paths'] != latest['child_paths']:
             fail(f'{earlier.name} and {diags[-1].name} disagree on the display child paths; console topology must not vary between boots')
-        if other['config'] != latest['config']:
+        if not boot_configs_equal(other['config'], latest['config']):
             fail(f'{earlier.name} and {diags[-1].name} disagree on the RTX PCI config space')
     prom_path = capture_dir / 'PROM.BIN'
     prom = prom_path.read_bytes()
@@ -721,6 +767,7 @@ def generate(capture_dir, locator, envelope):
                    'NoEdidDriver': latest['no_edid_driver'], 'Aggregate': latest['aggregate'], 'ChildCount': latest['child_count']},
         'Fwsec': fw, 'Code': latest['code'], 'HardwareTested': False,
         'Fixtures': {k: hashlib.sha256(v).hexdigest() for k, v in fixtures.items()},
+        'ExperimentalAsus3060Ti': bool(envelope.get('_experimental_asus3060ti', False)),
     }
     return text, report, fixtures
 
@@ -729,8 +776,12 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('captures', type=Path, help='folder with DIAGnn.TXT, IMGnn.BIN and PROM.BIN from the probe stick')
     parser.add_argument('locator', type=Path, help='fwsec-locate executable built from research/profile/fwsec-locate.c')
+    parser.add_argument('--experimental-asus3060ti', action='store_true',
+                        help='unproven exact ASUS 2489/884f experiment; host tests still required')
     args = parser.parse_args()
     envelope = json.loads((REPO / 'research/profile/proven.json').read_text())
+    if args.experimental_asus3060ti:
+        envelope = experimental_asus3060ti_envelope(envelope)
     try:
         header, report, fixtures = generate(args.captures, args.locator, envelope)
     except (OSError, UnicodeError, ValueError, KeyError, TypeError, struct.error, subprocess.SubprocessError) as error:
